@@ -30,29 +30,30 @@ lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
 -- unmap a default keymapping
 -- lvim.keys.normal_mode["<C-Up>"] = false
 -- edit a default keymapping
--- lvim.keys.normal_mode["<C-q>"] = ":q<cr>"
+lvim.keys.normal_mode["<C-q>"] = ":q<cr>"
+-- lvim.keys.normal_mode["<C-o>"] = ":bd<CR>"
 
 -- Change Telescope navigation to use j and k for navigation and n and p for history in both input and normal mode.
 -- we use protected-mode (pcall) just in case the plugin wasn't loaded yet.
--- local _, actions = pcall(require, "telescope.actions")
--- lvim.builtin.telescope.defaults.mappings = {
---   -- for input mode
---   i = {
---     ["<C-j>"] = actions.move_selection_next,
---     ["<C-k>"] = actions.move_selection_previous,
---     ["<C-n>"] = actions.cycle_history_next,
---     ["<C-p>"] = actions.cycle_history_prev,
---   },
---   -- for normal mode
---   n = {
---     ["<C-j>"] = actions.move_selection_next,
---     ["<C-k>"] = actions.move_selection_previous,
---   },
--- }
+local _, actions = pcall(require, "telescope.actions")
+lvim.builtin.telescope.defaults.mappings = {
+  -- for input mode
+  i = {
+    ["<C-j>"] = actions.move_selection_next,
+    ["<C-k>"] = actions.move_selection_previous,
+    ["<C-n>"] = actions.cycle_history_next,
+    ["<C-p>"] = actions.cycle_history_prev,
+  },
+  -- for normal mode
+  n = {
+    ["<C-j>"] = actions.move_selection_next,
+    ["<C-k>"] = actions.move_selection_previous,
+  },
+}
 
 -- Use which-key to add extra bindings with the leader-key prefix
 -- lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
--- lvim.builtin.which_key.mappings["t"] = {
+-- lvim.builtin.which_key.mappings["<space>t"] = {
 --   name = "+Trouble",
 --   r = { "<cmd>Trouble lsp_references<cr>", "References" },
 --   f = { "<cmd>Trouble lsp_definitions<cr>", "Definitions" },
@@ -103,42 +104,59 @@ lvim.builtin.treesitter.highlight.enabled = true
 -- generic LSP settings
 
 -- ---@usage disable automatic installation of servers
--- lvim.lsp.automatic_servers_installation = false
+lvim.lsp.automatic_servers_installation = false
 
 -- ---configure a server manually. !!Requires `:LvimCacheReset` to take effect!!
 -- ---see the full default list `:lua print(vim.inspect(lvim.lsp.automatic_configuration.skipped_servers))`
-vim.list_extend(lvim.lsp.automatic_configuration.skipped_servers, { "clangd" })
+require('lsp.ccls')
 
-local clangd_flags = {
-  "--all-scopes-completion",
-  "--suggest-missing-includes",
-  "--background-index",
-  "--pch-storage=disk",
-  "--cross-file-rename",
-  "--log=info",
-  "--completion-style=detailed",
-  "--enable-config", -- clangd 11+ supports reading from .clangd configuration file
-  "--clang-tidy",
-  -- "--clang-tidy-checks=-*,llvm-*,clang-analyzer-*,modernize-*,-modernize-use-trailing-return-type",
-  -- "--fallback-style=Google",
-  -- "--header-insertion=never",
-  -- "--query-driver=<list-of-white-listed-complers>"
-}
+-- local clangd_flags = {
+--   -- "--all-scopes-completion",
+--   "--suggest-missing-includes",
+--   "--background-index",
+--   "--pch-storage=disk",
+--   "--cross-file-rename",
+--   "--log=info",
+--   "--completion-style=detailed",
+--   "--enable-config", -- clangd 11+ supports reading from .clangd configuration file
+--   "--clang-tidy",
+--   -- "--clang-tidy-checks=-*,llvm-*,clang-analyzer-*,modernize-*,-modernize-use-trailing-return-type",
+--   "--fallback-style=Google",
+--   -- "--header-insertion=never",
+--   "--compile-commands-dir=build",
+--   "--query-driver=/usr/local/bin/gcc-11, /usr/local/bin/g++-11"
+-- }
 
-local custom_on_attach = function(client, bufnr)
-  require("lvim.lsp").common_on_attach(client, bufnr)
-  local opts = { noremap = true, silent = true }
-  vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>lh", "<Cmd>ClangdSwitchSourceHeader<CR>", opts)
-end
+-- vim.list_extend(lvim.lsp.automatic_configuration.skipped_servers, { "ccls" })
+-- local custom_on_attach = function(client, bufnr)
+--   require("lvim.lsp").common_on_attach(client, bufnr)
+--   -- local opts = { noremap = true, silent = true }
+--   -- vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>lh", "<Cmd>ClangdSwitchSourceHeader<CR>", opts)
+-- end
 
-local opts = {
-  cmd = { "clangd", unpack(clangd_flags) },
-  on_attach = custom_on_attach,
-}
+-- local ccls_cmd = "ccls"
 
-require("lvim.lsp.manager").setup("clangd", opts)
+-- local opts = {
+--   cmd = {ccls_cmd},
+--   on_attach = custom_on_attach,
+--   init_options = {
+-- 		highlight = {
+--       lsRanges = true;
+--     };
+--     cache = {
+--       directory = ".ccls-cache";
+--     };
+-- 		clang = {
+-- 			extraArgs = {"-stdc++=20, -Wall, -Werror, --gcc-toolchain=/usr/local/include/c++/11.2.0/"};
+--       excludeArgs = {'-frounding-math'} ;
+--     };
+-- 		compilationDatabaseDirectory = "build";
+-- 		filetypes = { "c", "cpp"};
+--   }
+-- }
 
-vim.list_extend(lvim.lsp.automatic_configuration, { "rust_analyzer" })
+-- require("lvim.lsp.manager").setup("ccls", opts)
+
 
 -- local opts = {} -- check the lspconfig documentation for a list of all possible options
 -- require("lvim.lsp.manager").setup("pyright", opts)
@@ -160,7 +178,7 @@ vim.list_extend(lvim.lsp.automatic_configuration, { "rust_analyzer" })
 -- end
 
 -- -- set a formatter, this will override the language server formatting capabilities (if it exists)
--- local formatters = require "lvim.lsp.null-ls.formatters"
+local formatters = require "lvim.lsp.null-ls.formatters"
 -- formatters.setup {
 -- { exe = "clang-format", args = {} },
 --}
@@ -177,8 +195,8 @@ vim.list_extend(lvim.lsp.automatic_configuration, { "rust_analyzer" })
 --   },
 -- }
 
--- -- set additional linters
--- local linters = require "lvim.lsp.null-ls.ljinters"
+-- set additional linters
+--local linters = require "lvim.lsp.null-ls.ljinters"
 -- linters.setup {
 --   { command = "flake8", filetypes = { "python" } },
 --   {
@@ -197,59 +215,49 @@ vim.list_extend(lvim.lsp.automatic_configuration, { "rust_analyzer" })
 
 -- Additional Plugins
 lvim.plugins = {
+  { 'fatih/vim-go' },
   { 'sainnhe/gruvbox-material' },
   { 'arkav/lualine-lsp-progress' },
   { 'luisiacc/gruvbox-baby' },
   { 'ellisonleao/gruvbox.nvim' },
-  { 'fatih/vim-go' },
+  { 'folke/tokyonight.nvim' },
   {
-    "lukas-reineke/indent-blankline.nvim",
+    "ray-x/lsp_signature.nvim",
     event = "BufRead",
-    setup = function()
-      vim.g.indentLine_enabled = 1
-      vim.g.indent_blankline_char = "▏"
-      vim.g.indent_blankline_filetype_exclude = { "help", "terminal", "dashboard" }
-      vim.g.indent_blankline_buftype_exclude = { "terminal" }
-      vim.g.indent_blankline_show_trailing_blankline_indent = false
-      vim.g.indent_blankline_show_first_indent_level = false
+    config = function()
+      require "lsp_signature".setup()
+    end
+  },
+  { 'lukas-reineke/indent-blankline.nvim',
+    config = function()
+      require('indent_blankline').setup(require('code.indent'))
     end
   },
   {
     "iamcco/markdown-preview.nvim",
-    run = "cd app && npm install",
     ft = "markdown",
     config = function()
       vim.g.mkdp_auto_start = 1
     end,
   },
-
   {
     "simrat39/rust-tools.nvim",
     config = function()
-      local lsp_installer_servers = require "nvim-lsp-installer.servers"
-      local _, requested_server = lsp_installer_servers.get_server "rust_analyzer"
-      require("rust-tools").setup({
-        tools = {
-          autoSetHints = true,
-          hover_with_actions = true,
-          runnables = {
-            use_telescope = true,
-          },
-        },
-        server = {
-          cmd_env = requested_server._default_options.cmd_env,
-          on_attach = require("lvim.lsp").common_on_attach,
-          on_init = require("lvim.lsp").common_on_init,
-        },
-      })
+      require('rust-tools').setup(require('lsp.rust'))
     end,
     ft = { "rust", "rs" },
   },
-  --     {"folke/tokyonight.nvim"},
-  --     {
-  --       "folke/trouble.nvim",
-  --       cmd = "TroubleToggle",
-  --     },
+  {
+    'folke/todo-comments.nvim',
+    config = function()
+      require("todo-comments").setup(require('code.todo_comment'))
+    end,
+  },
+  {
+    "folke/trouble.nvim",
+    cmd = "TroubleToggle",
+  },
+
 }
 
 -- Autocommands (https://neovim.io/doc/user/autocmd.html)
